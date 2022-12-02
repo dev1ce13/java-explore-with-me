@@ -7,7 +7,6 @@ import ru.yandex.practicum.main.event.mapper.EventMapper;
 import ru.yandex.practicum.main.event.model.Event;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CompilationMapper {

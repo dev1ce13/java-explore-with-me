@@ -7,7 +7,6 @@ import ru.yandex.practicum.main.event.model.Event;
 
 import javax.persistence.*;
 import java.util.List;
-import java.util.Set;
 
 @Data
 @AllArgsConstructor

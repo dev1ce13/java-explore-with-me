@@ -2,8 +2,6 @@ package ru.yandex.practicum.main.user.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.main.category.exception.CategoryNotFoundException;
-import ru.yandex.practicum.main.category.model.Category;
 import ru.yandex.practicum.main.user.dto.NewUserRequestDto;
 import ru.yandex.practicum.main.user.dto.UserDto;
 import ru.yandex.practicum.main.user.exception.DuplicateEmailException;

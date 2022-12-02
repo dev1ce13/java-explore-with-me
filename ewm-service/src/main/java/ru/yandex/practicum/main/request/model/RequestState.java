@@ -1,7 +1,5 @@
 package ru.yandex.practicum.main.request.model;
 
-import ru.yandex.practicum.main.event.model.EventState;
-
 import java.util.Optional;
 
 public enum RequestState {

@@ -28,6 +28,7 @@ public class RequestServiceImpl implements RequestService {
     private final RequestRepository requestRepository;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+
     @Override
     @Transactional
     public List<ParticipationRequestDto> privateGetRequestsForEvent(int userId, int eventId) {

@@ -251,8 +251,7 @@ public class EventServiceImpl implements EventService {
                                                int size,
                                                String remoteAddr,
                                                String requestURI) {
-        List<Event> events = eventRepository.findAllByAnnotationContainingIgnoreCaseOrDescriptionContainingIgnoreCaseAndState
-                (text, text, EventState.PUBLISHED);
+        List<Event> events = eventRepository.findAllByAnnotationContainingIgnoreCaseOrDescriptionContainingIgnoreCaseAndState(text, text, EventState.PUBLISHED);
         if (categories != null) {
             events = events.stream()
                     .filter(event -> categories.contains(event.getCategory().getId()))
