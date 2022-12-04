@@ -77,19 +77,4 @@ public class ErrorHandler {
                 apiError.getStatus()
         );
     }
-
-    @ExceptionHandler
-    public ResponseEntity<ApiError> handleException(final Exception e) {
-        ApiError apiError = ApiError.builder()
-                .errors(new ArrayList<>())
-                .reason("Error occurred")
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .timestamp(LocalDateTime.now())
-                .message(e.getMessage())
-                .build();
-        return new ResponseEntity<>(
-                apiError,
-                apiError.getStatus()
-        );
-    }
 }
