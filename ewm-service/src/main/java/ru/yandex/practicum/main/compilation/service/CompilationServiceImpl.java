@@ -13,6 +13,7 @@ import ru.yandex.practicum.main.event.exception.EventNotFoundException;
 import ru.yandex.practicum.main.event.model.Event;
 import ru.yandex.practicum.main.event.repository.EventRepository;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,7 +28,7 @@ public class CompilationServiceImpl implements CompilationService {
     @Override
     @Transactional
     public CompilationDto adminAddCompilation(NewCompilationDto newCompilationDto) {
-        Set<Event> events = (Set<Event>) eventRepository.findAllById(newCompilationDto.getEvents());
+        Set<Event> events = new HashSet<>(eventRepository.findAllById(newCompilationDto.getEvents()));
         Compilation compilation = CompilationMapper.mapToCompilationFromNewCompilationDto(newCompilationDto, events);
         return CompilationMapper.mapToCompilationDto(compilationRepository.save(compilation));
     }
