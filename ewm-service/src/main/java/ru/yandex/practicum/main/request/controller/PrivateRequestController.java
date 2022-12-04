@@ -46,9 +46,7 @@ public class PrivateRequestController {
     }
 
     @GetMapping("/requests")
-    public List<ParticipationRequestDto> privateGetRequests(
-            @PathVariable(name = "userId") int userId
-    ) {
+    public List<ParticipationRequestDto> privateGetRequests(@PathVariable(name = "userId") int userId) {
         log.info("/GET requests user with id={}", userId);
         return service.privateGetRequests(userId);
     }

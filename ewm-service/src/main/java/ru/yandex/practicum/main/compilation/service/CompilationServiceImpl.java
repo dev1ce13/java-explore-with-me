@@ -2,6 +2,7 @@ package ru.yandex.practicum.main.compilation.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.main.compilation.dto.CompilationDto;
 import ru.yandex.practicum.main.compilation.dto.NewCompilationDto;
 import ru.yandex.practicum.main.compilation.exception.CompilationNotFoundException;
@@ -12,9 +13,8 @@ import ru.yandex.practicum.main.event.exception.EventNotFoundException;
 import ru.yandex.practicum.main.event.model.Event;
 import ru.yandex.practicum.main.event.repository.EventRepository;
 
-import javax.transaction.Transactional;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,7 +27,7 @@ public class CompilationServiceImpl implements CompilationService {
     @Override
     @Transactional
     public CompilationDto adminAddCompilation(NewCompilationDto newCompilationDto) {
-        List<Event> events = eventRepository.findAllById(newCompilationDto.getEvents());
+        Set<Event> events = (Set<Event>) eventRepository.findAllById(newCompilationDto.getEvents());
         Compilation compilation = CompilationMapper.mapToCompilationFromNewCompilationDto(newCompilationDto, events);
         return CompilationMapper.mapToCompilationDto(compilationRepository.save(compilation));
     }
@@ -35,7 +35,6 @@ public class CompilationServiceImpl implements CompilationService {
     @Override
     @Transactional
     public void adminDeleteCompilation(int id) {
-        getById(id);
         compilationRepository.deleteById(id);
     }
 
@@ -43,30 +42,26 @@ public class CompilationServiceImpl implements CompilationService {
     @Transactional
     public void adminDeleteEventFromCompilation(int compId, int eventId) {
         Compilation compilation = getById(compId);
-        List<Event> events = compilation.getEvents();
-        Optional<Event> event = eventRepository.findById(eventId);
-        if (event.isPresent()) {
-            events.remove(event.get());
-            compilation.setEvents(events);
-            compilationRepository.save(compilation);
-        } else {
-            throw new EventNotFoundException(String.format("Event with id=%s was not found.", eventId));
-        }
+        Set<Event> events = compilation.getEvents();
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EventNotFoundException(String
+                        .format("Event with id=%s was not found.", eventId)));
+        events.remove(event);
+        compilation.setEvents(events);
+        compilationRepository.save(compilation);
     }
 
     @Override
     @Transactional
     public void adminAddEventFromCompilation(int compId, int eventId) {
-        Optional<Event> event = eventRepository.findById(eventId);
         Compilation compilation = getById(compId);
-        if (event.isPresent()) {
-            List<Event> events = compilation.getEvents();
-            events.add(event.get());
-            compilation.setEvents(events);
-            compilationRepository.save(compilation);
-        } else {
-            throw new EventNotFoundException(String.format("Event with id=%s was not found.", eventId));
-        }
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EventNotFoundException(String
+                        .format("Event with id=%s was not found.", eventId)));
+        Set<Event> events = compilation.getEvents();
+        events.add(event);
+        compilation.setEvents(events);
+        compilationRepository.save(compilation);
     }
 
     @Override
@@ -86,7 +81,7 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<CompilationDto> publicGetCompilations(Boolean pinned, int from, int size) {
         List<Compilation> compilations = compilationRepository.findAll();
         if (pinned != null) {
@@ -103,11 +98,9 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public CompilationDto publicGetCompilationById(int id) {
-        Compilation compilation = getById(id);
-        System.out.println("\n" + compilation + "\n");
-        return CompilationMapper.mapToCompilationDto(compilation);
+        return CompilationMapper.mapToCompilationDto(getById(id));
     }
 
     private void checkingFromParameter(int from, int listSize) {
@@ -117,12 +110,8 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     private Compilation getById(int id) {
-        Optional<Compilation> compilation = compilationRepository.findById(id);
-        if (compilation.isPresent()) {
-            return compilation.get();
-        } else {
-            throw new CompilationNotFoundException(String
-                    .format("Compilation with id=%s was not found.", id));
-        }
+        return compilationRepository.findById(id)
+                .orElseThrow(() -> new CompilationNotFoundException(String
+                        .format("Compilation with id=%s was not found.", id)));
     }
 }

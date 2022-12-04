@@ -11,9 +11,9 @@ import ru.yandex.practicum.main.compilation.controllers.PublicCompilationControl
 import ru.yandex.practicum.main.error.exception.ConflictException;
 import ru.yandex.practicum.main.error.exception.NotFoundException;
 import ru.yandex.practicum.main.error.model.ApiError;
-import ru.yandex.practicum.main.event.controllers.AdminController;
-import ru.yandex.practicum.main.event.controllers.PrivateController;
-import ru.yandex.practicum.main.event.controllers.PublicController;
+import ru.yandex.practicum.main.event.controllers.AdminEventController;
+import ru.yandex.practicum.main.event.controllers.PrivateEventController;
+import ru.yandex.practicum.main.event.controllers.PublicEventController;
 import ru.yandex.practicum.main.request.controller.PrivateRequestController;
 import ru.yandex.practicum.main.user.controllers.AdminUserController;
 
@@ -25,9 +25,9 @@ import java.util.ArrayList;
         PublicCategoryController.class,
         AdminCompilationController.class,
         PublicCompilationController.class,
-        AdminController.class,
-        PrivateController.class,
-        PublicController.class,
+        AdminEventController.class,
+        PrivateEventController.class,
+        PublicEventController.class,
         PrivateRequestController.class,
         AdminUserController.class
 })
@@ -69,6 +69,21 @@ public class ErrorHandler {
                 .errors(new ArrayList<>())
                 .reason("Only pending or canceled events can be changed")
                 .status(HttpStatus.FORBIDDEN)
+                .timestamp(LocalDateTime.now())
+                .message(e.getMessage())
+                .build();
+        return new ResponseEntity<>(
+                apiError,
+                apiError.getStatus()
+        );
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> handleException(final Exception e) {
+        ApiError apiError = ApiError.builder()
+                .errors(new ArrayList<>())
+                .reason("Error occurred")
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .timestamp(LocalDateTime.now())
                 .message(e.getMessage())
                 .build();

@@ -1,14 +1,16 @@
 package ru.yandex.practicum.main.compilation.model;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import ru.yandex.practicum.main.event.model.Event;
 
 import javax.persistence.*;
-import java.util.List;
+import java.util.Set;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -22,8 +24,8 @@ public class Compilation {
             name = "compilations_events",
             joinColumns = @JoinColumn(name = "compilation_id"),
             inverseJoinColumns = @JoinColumn(name = "event_id"))
-    private List<Event> events;
-    @Column(name = "pinned", nullable = false)
+    private Set<Event> events;
+    @Column(name = "pinned")
     private boolean pinned;
     @Column(name = "title", nullable = false)
     private String title;

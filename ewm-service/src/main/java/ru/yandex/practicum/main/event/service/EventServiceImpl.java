@@ -2,6 +2,7 @@ package ru.yandex.practicum.main.event.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.main.category.exception.CategoryNotFoundException;
 import ru.yandex.practicum.main.category.model.Category;
 import ru.yandex.practicum.main.category.repository.CategoryRepository;
@@ -18,7 +19,6 @@ import ru.yandex.practicum.main.user.exception.UserNotFoundException;
 import ru.yandex.practicum.main.user.model.User;
 import ru.yandex.practicum.main.user.repository.UserRepository;
 
-import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -35,7 +35,7 @@ public class EventServiceImpl implements EventService {
     private final StatClient statClient;
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<EventFullDto> adminGetEvents(List<Integer> users,
                                              List<EventState> states,
                                              List<Integer> categories,
@@ -134,11 +134,15 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public EventFullDto adminPublishEvent(int id) {
         Event event = getById(id);
-        if (event.getEventDate().isAfter(LocalDateTime.now().plusHours(1).plusSeconds(1))) {
-            event.setState(EventState.PUBLISHED);
-            return EventMapper.mapToEventFullDtoFromEvent(eventRepository.save(event));
+        if (event.getState().equals(EventState.PENDING)) {
+            if (event.getEventDate().isAfter(LocalDateTime.now().plusHours(1).plusSeconds(1))) {
+                event.setState(EventState.PUBLISHED);
+                return EventMapper.mapToEventFullDtoFromEvent(eventRepository.save(event));
+            } else {
+                throw new IllegalArgumentException("Event date too early");
+            }
         } else {
-            throw new IllegalArgumentException("Event date too early");
+            throw new IllegalArgumentException(String.format("Сan not publish event with state=%s", event.getState()));
         }
     }
 
@@ -146,12 +150,17 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public EventFullDto adminRejectEvent(int id) {
         Event event = getById(id);
-        event.setState(EventState.CANCELED);
-        return EventMapper.mapToEventFullDtoFromEvent(eventRepository.save(event));
+        if (!event.getState().equals(EventState.PUBLISHED)) {
+            event.setState(EventState.CANCELED);
+            return EventMapper.mapToEventFullDtoFromEvent(eventRepository.save(event));
+        } else {
+            throw new IllegalArgumentException(String
+                    .format("Сan not cancel event with state=%s", EventState.PUBLISHED));
+        }
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<EventShortDto> privateGetEvents(int id, int from, int size) {
         List<Event> events = eventRepository.findAllByInitiator_Id(id);
         checkingFromParameter(from, events.size());
@@ -165,81 +174,75 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventFullDto privateUpdateEvent(int id, UpdateEventRequestDto updateEventRequestDto) {
-        Optional<Category> category = categoryRepository.findById(updateEventRequestDto.getCategory());
         Event event = getById(updateEventRequestDto.getEventId());
-        if (event.getInitiator().getId() == id && category.isPresent()) {
-            if (updateEventRequestDto.getEventDate().isAfter(LocalDateTime.now().plusHours(2).plusSeconds(1))) {
-                if (event.getState().equals(EventState.PENDING) || event.getState().equals(EventState.CANCELED)) {
-                    event.setAnnotation(updateEventRequestDto.getAnnotation());
-                    event.setCategory(category.get());
-                    event.setDescription(updateEventRequestDto.getDescription());
-                    event.setEventDate(updateEventRequestDto.getEventDate());
-                    event.setPaid(updateEventRequestDto.isPaid());
-                    event.setParticipantLimit(updateEventRequestDto.getParticipantLimit());
-                    event.setTitle(updateEventRequestDto.getTitle());
-                    event.setState(EventState.PENDING);
-                    return EventMapper.mapToEventFullDtoFromEvent(eventRepository.save(event));
-                } else {
-                    throw new IllegalArgumentException("The event has already been published");
-                }
-            } else {
-                throw new IllegalArgumentException("Event date too early");
-            }
-        } else {
-            throw new CategoryNotFoundException(String
-                    .format("Category with id=%s was not found.", updateEventRequestDto.getCategory()));
+        Category category = categoryRepository.findById(updateEventRequestDto.getCategory())
+                .orElseThrow(() -> new CategoryNotFoundException(String
+                        .format("Category with id=%s was not found.", id)));
+        if (event.getInitiator().getId() != id) {
+            throw new IllegalArgumentException(String
+                    .format("User with id=%s not update event with id=%s", id, updateEventRequestDto.getEventId()));
         }
+        if (updateEventRequestDto.getEventDate().isBefore(LocalDateTime.now().plusHours(2).plusSeconds(1))) {
+            throw new IllegalArgumentException("Event date too early");
+        }
+        if (event.getState().equals(EventState.PUBLISHED)) {
+            throw new IllegalArgumentException("The event has already been published");
+        }
+        event.setAnnotation(updateEventRequestDto.getAnnotation());
+        event.setCategory(category);
+        event.setDescription(updateEventRequestDto.getDescription());
+        event.setEventDate(updateEventRequestDto.getEventDate());
+        event.setPaid(updateEventRequestDto.isPaid());
+        event.setParticipantLimit(updateEventRequestDto.getParticipantLimit());
+        event.setTitle(updateEventRequestDto.getTitle());
+        event.setState(EventState.PENDING);
+        return EventMapper.mapToEventFullDtoFromEvent(eventRepository.save(event));
     }
 
     @Override
     @Transactional
     public EventFullDto privateCreateEvent(int id, NewEventDto newEventDto) {
-        Optional<User> user = userRepository.findById(id);
-        Optional<Category> category = categoryRepository.findById(newEventDto.getCategory());
-        if (user.isEmpty()) {
-            throw new UserNotFoundException(String
-                    .format("User with id=%s was not found.", id));
-        } else if (category.isEmpty()) {
-            throw new CategoryNotFoundException(String
-                    .format("Category with id=%s was not found.", newEventDto.getCategory()));
-        } else {
-            Event event = EventMapper.mapToEventFromNewEventDto(newEventDto, user.get(), category.get());
-            return EventMapper.mapToEventFullDtoFromEvent(eventRepository.save(event));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(String.format("User with id=%s was not found.", id)));
+        Category category = categoryRepository.findById(newEventDto.getCategory())
+                .orElseThrow(() -> new CategoryNotFoundException(String
+                        .format("Category with id=%s was not found.", id)));
+        if (newEventDto.getEventDate().isBefore(LocalDateTime.now().plusHours(2).plusSeconds(1))) {
+            throw new IllegalArgumentException("Event date too early");
         }
+        Event event = EventMapper.mapToEventFromNewEventDto(newEventDto, user, category);
+        return EventMapper.mapToEventFullDtoFromEvent(eventRepository.save(event));
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public EventFullDto privateGetEventById(int userId, int eventId) {
         Event event = getById(eventId);
-        if (event.getInitiator().getId() == userId) {
-            return EventMapper.mapToEventFullDtoFromEvent(event);
-        } else {
+        if (event.getInitiator().getId() != userId) {
             throw new IllegalArgumentException(String
                     .format("User with id=%s don't look full info for event with id=%s", userId, event));
         }
+        return EventMapper.mapToEventFullDtoFromEvent(event);
     }
 
     @Override
     @Transactional
     public EventFullDto privateRejectEventById(int userId, int eventId) {
         Event event = getById(eventId);
-        if (event.getInitiator().getId() == userId) {
-            if (event.getState().equals(EventState.PENDING)) {
-                event.setState(EventState.CANCELED);
-                return EventMapper.mapToEventFullDtoFromEvent(eventRepository.save(event));
-            } else {
-                throw new IllegalArgumentException(String
-                        .format("Event with id=%s cannot be canceled", eventId));
-            }
-        } else {
+        if (event.getInitiator().getId() != userId) {
             throw new IllegalArgumentException(String
                     .format("User with id=%s don't reject event with id=%s", userId, event));
         }
+        if (!event.getState().equals(EventState.PENDING)) {
+            throw new IllegalArgumentException(String
+                    .format("Event with id=%s cannot be canceled", eventId));
+        }
+        event.setState(EventState.CANCELED);
+        return EventMapper.mapToEventFullDtoFromEvent(eventRepository.save(event));
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<EventShortDto> publicGetEvents(String text,
                                                List<Integer> categories,
                                                Boolean paid,
@@ -316,22 +319,21 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public EventFullDto publicGetEventById(int id, String remoteAddr, String requestURI) {
         Event event = getById(id);
-        if (event.getState().equals(EventState.PUBLISHED)) {
-            event.setViews(event.getViews() + 1);
-            eventRepository.save(event);
-            RequestDto requestDto = RequestDto.builder()
-                    .app("ewm-main-service")
-                    .ip(remoteAddr)
-                    .uri(requestURI)
-                    .build();
-            statClient.create(requestDto);
-            return EventMapper.mapToEventFullDtoFromEvent(event);
-        } else {
+        if (!event.getState().equals(EventState.PUBLISHED)) {
             throw new EventNotFoundException(String.format("Event with id=%s was not found.", id));
         }
+        event.setViews(event.getViews() + 1);
+        eventRepository.save(event);
+        RequestDto requestDto = RequestDto.builder()
+                .app("ewm-main-service")
+                .ip(remoteAddr)
+                .uri(requestURI)
+                .build();
+        statClient.create(requestDto);
+        return EventMapper.mapToEventFullDtoFromEvent(event);
     }
 
     private void checkingFromParameter(int from, int listSize) {
@@ -341,11 +343,7 @@ public class EventServiceImpl implements EventService {
     }
 
     private Event getById(int id) {
-        Optional<Event> event = eventRepository.findById(id);
-        if (event.isPresent()) {
-            return event.get();
-        } else {
-            throw new EventNotFoundException(String.format("Event with id=%s was not found.", id));
-        }
+        return eventRepository.findById(id)
+                .orElseThrow(() -> new EventNotFoundException(String.format("Event with id=%s was not found.", id)));
     }
 }

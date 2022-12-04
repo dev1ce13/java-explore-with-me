@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.extern.jackson.Jacksonized;
 import ru.yandex.practicum.main.event.model.Location;
 
-import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
@@ -14,8 +14,7 @@ import java.time.LocalDateTime;
 @Builder
 @Jacksonized
 public class NewEventDto {
-    @NotNull
-    @NotEmpty
+    @NotBlank
     private String annotation;
     @NotNull
     private int category;
@@ -30,7 +29,6 @@ public class NewEventDto {
     @NotNull
     private int participantLimit;
     private boolean requestModeration;
-    @NotNull
-    @NotEmpty
+    @NotBlank
     private String title;
 }

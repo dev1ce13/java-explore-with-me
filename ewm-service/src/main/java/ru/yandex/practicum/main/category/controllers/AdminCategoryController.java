@@ -18,25 +18,19 @@ public class AdminCategoryController {
     private final CategoryService service;
 
     @PatchMapping
-    public CategoryDto adminUpdateCategory(
-            @Valid @RequestBody CategoryDto categoryDto
-    ) {
+    public CategoryDto adminUpdateCategory(@Valid @RequestBody CategoryDto categoryDto) {
         log.info("/PATCH category");
         return service.adminUpdateCategory(categoryDto);
     }
 
     @PostMapping
-    public CategoryDto adminAddCategory(
-            @Valid @RequestBody NewCategoryDto newCategoryDto
-    ) {
+    public CategoryDto adminAddCategory(@Valid @RequestBody NewCategoryDto newCategoryDto) {
         log.info("/POST category");
         return service.adminAddCategory(newCategoryDto);
     }
 
     @DeleteMapping("/{catId}")
-    public void adminDeleteCategory(
-            @PathVariable(name = "catId") int id
-    ) {
+    public void adminDeleteCategory(@PathVariable(name = "catId") int id) {
         log.info("/DELETE category with id={}", id);
         service.adminDeleteCategory(id);
     }

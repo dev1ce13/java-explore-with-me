@@ -2,6 +2,7 @@ package ru.yandex.practicum.main.category.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.main.category.dto.CategoryDto;
 import ru.yandex.practicum.main.category.dto.NewCategoryDto;
 import ru.yandex.practicum.main.category.exception.CategoryNotFoundException;
@@ -10,10 +11,8 @@ import ru.yandex.practicum.main.category.mapper.CategoryMapper;
 import ru.yandex.practicum.main.category.model.Category;
 import ru.yandex.practicum.main.category.repository.CategoryRepository;
 
-import javax.transaction.Transactional;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,7 +58,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<CategoryDto> publicGetCategories(int from, int size) {
         List<Category> categories = categoryRepository.findAll();
         checkingFromParameter(from, categories.size());
@@ -71,7 +70,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public CategoryDto publicGetCategoryById(int id) {
         return CategoryMapper.mapToCategoryDto(getById(id));
     }
@@ -83,12 +82,8 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     private Category getById(int id) {
-        Optional<Category> category = categoryRepository.findById(id);
-        if (category.isPresent()) {
-            return category.get();
-        } else {
-            throw new CategoryNotFoundException(String
-                    .format("Category with id=%s was not found.", id));
-        }
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new CategoryNotFoundException(String
+                        .format("Category with id=%s was not found.", id)));
     }
 }

@@ -27,9 +27,7 @@ public class PublicCompilationController {
     }
 
     @GetMapping("/{compId}")
-    public CompilationDto publicGetCompilationById(
-            @PathVariable(name = "compId") int id
-    ) {
+    public CompilationDto publicGetCompilationById(@PathVariable(name = "compId") int id) {
         log.info("/GET compilation by id={}", id);
         return service.publicGetCompilationById(id);
     }

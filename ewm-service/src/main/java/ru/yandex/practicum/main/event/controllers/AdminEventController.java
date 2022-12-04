@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @RequestMapping("/admin/events")
-public class AdminController {
+public class AdminEventController {
 
     private final EventService service;
 
@@ -55,17 +55,13 @@ public class AdminController {
     }
 
     @PatchMapping("/{eventId}/publish")
-    public EventFullDto adminPublishEvent(
-            @PathVariable(name = "eventId") int id
-    ) {
+    public EventFullDto adminPublishEvent(@PathVariable(name = "eventId") int id) {
         log.info("/PATCH publish event with id={}", id);
         return service.adminPublishEvent(id);
     }
 
     @PatchMapping("/{eventId}/reject")
-    public EventFullDto adminRejectEvent(
-            @PathVariable(name = "eventId") int id
-    ) {
+    public EventFullDto adminRejectEvent(@PathVariable(name = "eventId") int id) {
         log.info("/PATCH reject event with id={}", id);
         return service.adminRejectEvent(id);
     }

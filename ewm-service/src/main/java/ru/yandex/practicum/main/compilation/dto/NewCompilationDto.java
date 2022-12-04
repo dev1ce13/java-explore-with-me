@@ -3,8 +3,7 @@ package ru.yandex.practicum.main.compilation.dto;
 import lombok.Builder;
 import lombok.Data;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotBlank;
 import java.util.Set;
 
 @Data
@@ -12,7 +11,6 @@ import java.util.Set;
 public class NewCompilationDto {
     private Set<Integer> events;
     private boolean pinned;
-    @NotNull
-    @NotEmpty
+    @NotBlank
     private String title;
 }

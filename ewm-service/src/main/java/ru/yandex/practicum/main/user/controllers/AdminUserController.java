@@ -29,17 +29,13 @@ public class AdminUserController {
     }
 
     @PostMapping
-    public UserDto adminCreateUser(
-            @Valid @RequestBody NewUserRequestDto newUserRequestDto
-    ) {
+    public UserDto adminCreateUser(@Valid @RequestBody NewUserRequestDto newUserRequestDto) {
         log.info("/POST admin user");
         return service.adminCreateUser(newUserRequestDto);
     }
 
     @DeleteMapping("/{userId}")
-    public void adminDeleteUser(
-            @PathVariable(name = "userId") int id
-    ) {
+    public void adminDeleteUser(@PathVariable(name = "userId") int id) {
         log.info("/DELETE admin user with id={}", id);
         service.adminDeleteUser(id);
     }

@@ -2,12 +2,10 @@ package ru.yandex.practicum.main.category.dto;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotBlank;
 
 @Data
 public class NewCategoryDto {
-    @NotNull
-    @NotEmpty
+    @NotBlank
     private String name;
 }

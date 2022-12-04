@@ -18,17 +18,13 @@ public class AdminCompilationController {
     private final CompilationService service;
 
     @PostMapping
-    public CompilationDto adminAddCompilation(
-            @Valid @RequestBody NewCompilationDto newCompilationDto
-    ) {
+    public CompilationDto adminAddCompilation(@Valid @RequestBody NewCompilationDto newCompilationDto) {
         log.info("/POST admin add compilation");
         return service.adminAddCompilation(newCompilationDto);
     }
 
     @DeleteMapping("/{compId}")
-    public void adminDeleteCompilation(
-            @PathVariable(name = "compId") int id
-    ) {
+    public void adminDeleteCompilation(@PathVariable(name = "compId") int id) {
         log.info("/DELETE admin compilation with id={}", id);
         service.adminDeleteCompilation(id);
     }
@@ -52,17 +48,13 @@ public class AdminCompilationController {
     }
 
     @DeleteMapping("/{compId}/pin")
-    public void adminUnpinCompilation(
-            @PathVariable(name = "compId") int id
-    ) {
+    public void adminUnpinCompilation(@PathVariable(name = "compId") int id) {
         log.info("/DELETE admin unpin compilation with id={}", id);
         service.adminUnpinCompilation(id);
     }
 
     @PatchMapping("/{compId}/pin")
-    public void adminPinCompilation(
-            @PathVariable(name = "compId") int id
-    ) {
+    public void adminPinCompilation(@PathVariable(name = "compId") int id) {
         log.info("/PATCH admin pin compilation with id={}", id);
         service.adminPinCompilation(id);
     }
