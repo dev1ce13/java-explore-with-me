@@ -18,7 +18,6 @@ import ru.yandex.practicum.main.user.model.User;
 import ru.yandex.practicum.main.user.repository.UserRepository;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,15 +31,7 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional(readOnly = true)
     public List<ParticipationRequestDto> privateGetRequestsForEvent(int userId, int eventId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new EventNotFoundException(String
-                        .format("Event with id=%s was not found.", eventId)));
-        if (event.getInitiator().getId() != userId) {
-            throw new IllegalArgumentException(String
-                    .format("User with id=%s not have access in event with id=%s", userId, eventId));
-        }
-        List<Request> requests = requestRepository.findAllByEvent_Id(eventId);
-        return requests.stream()
+        return requestRepository.findAllByEvent_IdAndInitiatorId(eventId, userId).stream()
                 .map(RequestMapper::mapToParticipationRequestDtoFromRequest)
                 .collect(Collectors.toList());
     }
@@ -48,17 +39,18 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional
     public ParticipationRequestDto privateConfirmRequest(int userId, int eventId, int reqId) {
+        Request request = getById(reqId);
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EventNotFoundException(String
                         .format("Event with id=%s was not found.", eventId)));
-        if (event.getInitiator().getId() != userId) {
-            throw new IllegalArgumentException(String
-                    .format("User with id=%s not have access in event with id=%s", userId, eventId));
-        }
+        checkingInitiatorAccess(userId, event);
         if (event.getParticipantLimit() == event.getConfirmedRequests() && event.getParticipantLimit() != 0) {
             throw new IllegalArgumentException("Participant limit exceeded");
         }
-        Request request = getById(reqId);
+        if (eventId != request.getEvent().getId()) {
+            throw new IllegalArgumentException(String
+                    .format("Request with id=%s not applicable for event with id=%s", reqId, eventId));
+        }
         request.setStatus(RequestState.CONFIRMED);
         event.setConfirmedRequests(event.getConfirmedRequests() + 1);
         eventRepository.save(event);
@@ -68,14 +60,15 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional
     public ParticipationRequestDto privateRejectRequest(int userId, int eventId, int reqId) {
+        Request request = getById(reqId);
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EventNotFoundException(String
                         .format("Event with id=%s was not found.", eventId)));
-        if (event.getInitiator().getId() != userId) {
+        checkingInitiatorAccess(userId, event);
+        if (event.getId() != request.getEvent().getId()) {
             throw new IllegalArgumentException(String
-                    .format("User with id=%s not have access in event with id=%s", userId, eventId));
+                    .format("Request with id=%s not applicable for event with id=%s", reqId, eventId));
         }
-        Request request = getById(reqId);
         request.setStatus(RequestState.REJECTED);
         return RequestMapper.mapToParticipationRequestDtoFromRequest(requestRepository.save(request));
     }
@@ -121,20 +114,24 @@ public class RequestServiceImpl implements RequestService {
     @Transactional
     public ParticipationRequestDto privateCancelRequest(int userId, int reqId) {
         Request request = getById(reqId);
-        if (request.getRequester().getId() != userId) {
+        if (userId != request.getRequester().getId()) {
             throw new IllegalArgumentException(String
-                    .format("User with id=%s can not cancel request with id=%s", userId, reqId));
+                    .format("User with id=%s not access to request with id=%s", userId, reqId));
         }
         request.setStatus(RequestState.CANCELED);
         return RequestMapper.mapToParticipationRequestDtoFromRequest(requestRepository.save(request));
     }
 
     private Request getById(int id) {
-        Optional<Request> request = requestRepository.findById(id);
-        if (request.isPresent()) {
-            return request.get();
-        } else {
-            throw new RequestNotFoundException(String.format("Request with id=%s was not found.", id));
+        return requestRepository.findById(id)
+                .orElseThrow(() -> new RequestNotFoundException(String
+                        .format("Request with id=%s was not found.", id)));
+    }
+
+    private void checkingInitiatorAccess(int userId, Event event) {
+        if (userId != event.getInitiator().getId()) {
+            throw new IllegalArgumentException(String
+                    .format("User with id=%s not access to event with id=%s", userId, event.getId()));
         }
     }
 }
