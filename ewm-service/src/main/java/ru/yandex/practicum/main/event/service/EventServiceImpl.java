@@ -9,6 +9,7 @@ import ru.yandex.practicum.main.category.repository.CategoryRepository;
 import ru.yandex.practicum.main.event.client.StatClient;
 import ru.yandex.practicum.main.event.client.dto.RequestDto;
 import ru.yandex.practicum.main.event.dto.*;
+import ru.yandex.practicum.main.event.exception.CommentNotFoundException;
 import ru.yandex.practicum.main.event.exception.EventNotFoundException;
 import ru.yandex.practicum.main.event.mapper.CommentMapper;
 import ru.yandex.practicum.main.event.mapper.EventMapper;
@@ -28,7 +29,6 @@ import ru.yandex.practicum.main.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -174,7 +174,7 @@ public class EventServiceImpl implements EventService {
                 .map(EventMapper::mapToEventShortDtoFromEvent)
                 .peek(eventShortDto -> eventShortDto.setComments(
                         commentRepository.findAllByEvent_Id(
-                                eventShortDto.getId()).stream()
+                                        eventShortDto.getId()).stream()
                                 .map(CommentMapper::mapToCommentDtoFromComment)
                                 .collect(Collectors.toList())))
                 .collect(Collectors.toList());
@@ -384,6 +384,35 @@ public class EventServiceImpl implements EventService {
         }
         Comment comment = CommentMapper.mapToCommentFromNewCommentDto(newCommentDto, user, event);
         return CommentMapper.mapToCommentDtoFromComment(commentRepository.save(comment));
+    }
+
+    @Override
+    public CommentDto privateUpdateComment(int userId, int eventId, UpdateCommentDto updateCommentDto) {
+        Comment comment = commentRepository.findById(updateCommentDto.getId())
+                .orElseThrow(() -> new CommentNotFoundException(String
+                        .format("Comment with id=%s not found", updateCommentDto.getId())));
+        if (comment.getCommenter().getId() != userId) {
+            throw new IllegalArgumentException(String
+                    .format("User with id=%s not have access for comment with id=%s",
+                            userId,
+                            updateCommentDto.getId()));
+        }
+        comment.setText(updateCommentDto.getText());
+        return CommentMapper.mapToCommentDtoFromComment(commentRepository.save(comment));
+    }
+
+    @Override
+    public void privateDeleteCommentById(int userId, int eventId, int commentId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException(String
+                        .format("Comment with id=%s not found", commentId)));
+        if (comment.getCommenter().getId() != userId) {
+            throw new IllegalArgumentException(String
+                    .format("User with id=%s not have access for comment with id=%s",
+                            userId,
+                            commentId));
+        }
+        commentRepository.deleteById(commentId);
     }
 
     private void checkingFromParameter(int from, int listSize) {

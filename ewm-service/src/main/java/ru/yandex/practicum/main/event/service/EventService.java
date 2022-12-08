@@ -48,4 +48,8 @@ public interface EventService {
     EventFullDto publicGetEventById(int id, String remoteAddr, String requestURI);
 
     CommentDto privateAddComment(int userId, int eventId, NewCommentDto newCommentDto);
+
+    CommentDto privateUpdateComment(int userId, int eventId, UpdateCommentDto updateCommentDto);
+
+    void privateDeleteCommentById(int userId, int eventId, int commentId);
 }

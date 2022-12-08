@@ -63,7 +63,7 @@ public class PrivateEventController {
         return service.privateRejectEventById(id, eventId);
     }
 
-    @PostMapping("/{eventId}/comment")
+    @PostMapping("/{eventId}/comments")
     public CommentDto addComment(
             @PathVariable(name = "userId") int id,
             @PathVariable(name = "eventId") int eventId,
@@ -71,5 +71,25 @@ public class PrivateEventController {
     ) {
         log.info("/POST add comment user with id={} for event with id={}", id, eventId);
         return service.privateAddComment(id, eventId, newCommentDto);
+    }
+
+    @PatchMapping("/{eventId}/comments")
+    public CommentDto updateComment(
+            @PathVariable(name = "userId") int userId,
+            @PathVariable(name = "eventId") int eventId,
+            @Valid @RequestBody UpdateCommentDto updateCommentDto
+    ) {
+        log.info("/PATCH update comment with id={}", updateCommentDto.getId());
+        return service.privateUpdateComment(userId, eventId, updateCommentDto);
+    }
+
+    @DeleteMapping("/{eventId}/comments/{commentId}")
+    public void deleteCommentById(
+            @PathVariable(name = "userId") int userId,
+            @PathVariable(name = "eventId") int eventId,
+            @PathVariable(name = "commentId") int commentId
+    ) {
+        log.info("/DELETE comment woth id={}", commentId);
+        service.privateDeleteCommentById(userId, eventId, commentId);
     }
 }
