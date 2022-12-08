@@ -46,4 +46,6 @@ public interface EventService {
                                         String requestURI);
 
     EventFullDto publicGetEventById(int id, String remoteAddr, String requestURI);
+
+    CommentDto privateAddComment(int userId, int eventId, NewCommentDto newCommentDto);
 }
