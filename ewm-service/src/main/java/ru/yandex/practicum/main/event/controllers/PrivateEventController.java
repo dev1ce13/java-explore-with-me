@@ -3,10 +3,7 @@ package ru.yandex.practicum.main.event.controllers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.main.event.dto.EventFullDto;
-import ru.yandex.practicum.main.event.dto.EventShortDto;
-import ru.yandex.practicum.main.event.dto.NewEventDto;
-import ru.yandex.practicum.main.event.dto.UpdateEventRequestDto;
+import ru.yandex.practicum.main.event.dto.*;
 import ru.yandex.practicum.main.event.service.EventService;
 
 import javax.validation.Valid;
@@ -64,5 +61,35 @@ public class PrivateEventController {
     ) {
         log.info("/PATCH user with id={} reject event with id={}", id, eventId);
         return service.privateRejectEventById(id, eventId);
+    }
+
+    @PostMapping("/{eventId}/comments")
+    public CommentDto addComment(
+            @PathVariable(name = "userId") int id,
+            @PathVariable(name = "eventId") int eventId,
+            @Valid @RequestBody NewCommentDto newCommentDto
+    ) {
+        log.info("/POST add comment user with id={} for event with id={}", id, eventId);
+        return service.privateAddComment(id, eventId, newCommentDto);
+    }
+
+    @PatchMapping("/{eventId}/comments")
+    public CommentDto updateComment(
+            @PathVariable(name = "userId") int userId,
+            @PathVariable(name = "eventId") int eventId,
+            @Valid @RequestBody UpdateCommentDto updateCommentDto
+    ) {
+        log.info("/PATCH update comment with id={}", updateCommentDto.getId());
+        return service.privateUpdateComment(userId, eventId, updateCommentDto);
+    }
+
+    @DeleteMapping("/{eventId}/comments/{commentId}")
+    public void deleteCommentById(
+            @PathVariable(name = "userId") int userId,
+            @PathVariable(name = "eventId") int eventId,
+            @PathVariable(name = "commentId") int commentId
+    ) {
+        log.info("/DELETE comment woth id={}", commentId);
+        service.privateDeleteCommentById(userId, eventId, commentId);
     }
 }

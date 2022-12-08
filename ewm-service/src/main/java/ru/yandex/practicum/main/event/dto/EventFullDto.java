@@ -10,6 +10,7 @@ import ru.yandex.practicum.main.event.model.Location;
 import ru.yandex.practicum.main.user.dto.UserShortDto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -32,4 +33,5 @@ public class EventFullDto {
     private EventState state;
     private String title;
     private int views;
+    private List<CommentDto> comments;
 }

@@ -4,25 +4,18 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.jackson.Jacksonized;
-import ru.yandex.practicum.main.category.model.Category;
 import ru.yandex.practicum.main.user.dto.UserShortDto;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Builder
 @Jacksonized
-public class EventShortDto {
+public class CommentDto {
     private int id;
-    private String annotation;
-    private Category category;
-    private int confirmedRequests;
+    private String text;
+    private int eventId;
+    private UserShortDto commenter;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime eventDate;
-    private UserShortDto initiator;
-    private boolean paid;
-    private String title;
-    private int views;
-    private List<CommentDto> comments;
+    private LocalDateTime timestamp;
 }

@@ -9,8 +9,11 @@ import ru.yandex.practicum.main.compilation.exception.CompilationNotFoundExcepti
 import ru.yandex.practicum.main.compilation.mapper.CompilationMapper;
 import ru.yandex.practicum.main.compilation.model.Compilation;
 import ru.yandex.practicum.main.compilation.repository.CompilationRepository;
+import ru.yandex.practicum.main.event.dto.EventShortDto;
 import ru.yandex.practicum.main.event.exception.EventNotFoundException;
+import ru.yandex.practicum.main.event.mapper.CommentMapper;
 import ru.yandex.practicum.main.event.model.Event;
+import ru.yandex.practicum.main.event.repository.CommentRepository;
 import ru.yandex.practicum.main.event.repository.EventRepository;
 
 import java.util.HashSet;
@@ -24,6 +27,7 @@ public class CompilationServiceImpl implements CompilationService {
 
     private final CompilationRepository compilationRepository;
     private final EventRepository eventRepository;
+    private final CommentRepository commentRepository;
 
     @Override
     @Transactional
@@ -91,17 +95,33 @@ public class CompilationServiceImpl implements CompilationService {
                     .collect(Collectors.toList());
         }
         checkingFromParameter(from, compilations.size());
-        return compilations.subList(from, compilations.size())
+        List<CompilationDto> outputCompilations = compilations.subList(from, compilations.size())
                 .stream()
                 .limit(size)
                 .map(CompilationMapper::mapToCompilationDto)
+                .collect(Collectors.toList());
+        return outputCompilations.stream()
+                .peek(compilation -> {
+                    Set<EventShortDto> events = compilation.getEvents();
+                    events.forEach(e -> e.setComments(commentRepository.findAllByEvent_Id(e.getId()).stream()
+                            .map(CommentMapper::mapToCommentDtoFromComment)
+                            .collect(Collectors.toList())));
+                    compilation.setEvents(events);
+                })
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
     public CompilationDto publicGetCompilationById(int id) {
-        return CompilationMapper.mapToCompilationDto(getById(id));
+        CompilationDto outputCompilation = CompilationMapper.mapToCompilationDto(getById(id));
+        Set<EventShortDto> events = outputCompilation.getEvents();
+        events.forEach(e -> e.setComments(commentRepository.findAllByEvent_Id(e.getId())
+                .stream()
+                .map(CommentMapper::mapToCommentDtoFromComment)
+                .collect(Collectors.toList())));
+        outputCompilation.setEvents(events);
+        return outputCompilation;
     }
 
     private void checkingFromParameter(int from, int listSize) {
